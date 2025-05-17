@@ -15,8 +15,18 @@ RabbitMQ will accepts message from publishers, route the messages to specific qu
 * Enables system and applications to communicate   
 
 
+### Overview in RabbitMQ
+![alt text](images/Overview.png)
+While the message getting in, the RabbitMQ provided their own metrics about the messages in queue and the incoming rates.
+
+#### Nodes in the Overview panel
+This is important for monitoring the MQ nodes healthy status.
+#### Ports and context in Overview
+![alt text](images/PortnContext.png)
+
+
 ### Queues in RabbitMQ
-![alt text](images/image.png)
+![alt text](images/Queues.png)
 From the Image above, there are two queues in the RabbitMQ.
 - my_queue
 - message_queue
