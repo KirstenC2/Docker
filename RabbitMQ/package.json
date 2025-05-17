@@ -1,0 +1,14 @@
+{
+  "name": "test_rabbit_script",
+  "version": "1.0.0",
+  "description": "this is a script to test rabbitmq function.",
+  "main": "test_flooding.js",
+  "scripts": {
+    "test": "node test_flooding"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "amqplib": "^0.10.8"
+  }
+}
