@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  wordpress:
+    image: wordpress:6.5
+    container_name: wordpress
+    restart: always
+    ports:
+      - "8085:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress_pass
+      WORDPRESS_DB_NAME: wordpress_db
+    volumes:
+      - ./wp_data:/var/www/html
+    networks:
+      - wpnet
+
+  db:
+    image: mysql:8.0
+    container_name: wordpress-db
+    restart: always
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_DATABASE: wordpress_db
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress_pass
+      MYSQL_ROOT_PASSWORD: root_pass
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+    networks:
+      - wpnet
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    restart: always
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: root_pass
+    networks:
+      - wpnet
+
+networks:
+  wpnet:
