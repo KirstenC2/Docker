@@ -1,0 +1,163 @@
+version: '3'
+
+services:
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=airflow
+      - POSTGRES_PASSWORD=airflow
+      - POSTGRES_DB=airflow
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 5s
+      retries: 5
+    restart: unless-stopped
+
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 30s
+      retries: 50
+    restart: unless-stopped
+
+  airflow-webserver:
+    image: apache/airflow:2.7.1
+    container_name: airflow-webserver
+    command: webserver
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://airflow:airflow@postgres/airflow
+      - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/0
+      - AIRFLOW__CORE__FERNET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
+      - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=true
+      - AIRFLOW__CORE__LOAD_EXAMPLES=false
+      - AIRFLOW__API__AUTH_BACKENDS=airflow.api.auth.backend.basic_auth
+      - _AIRFLOW_DB_UPGRADE=true
+      - _AIRFLOW_WWW_USER_CREATE=true
+      - _AIRFLOW_WWW_USER_USERNAME=admin
+      - _AIRFLOW_WWW_USER_PASSWORD=admin
+      - AIRFLOW__WEBSERVER__WEB_SERVER_PORT=8080
+      - AIRFLOW__WEBSERVER__EXPOSE_CONFIG=true
+      - AIRFLOW__WEBSERVER__ACCESS_LOGFILE=-
+      - AIRFLOW__WEBSERVER__ERROR_LOGFILE=-
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./config:/opt/airflow/config
+    restart: unless-stopped
+
+  airflow-scheduler:
+    image: apache/airflow:2.7.1
+    container_name: airflow-scheduler
+    command: scheduler
+    depends_on:
+      - airflow-webserver
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://airflow:airflow@postgres/airflow
+      - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/0
+      - AIRFLOW__CORE__FERNET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
+      - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=true
+      - AIRFLOW__CORE__LOAD_EXAMPLES=false
+      - AIRFLOW__LOGGING__LOGGING_LEVEL=INFO
+      - AIRFLOW__SCHEDULER__SCHEDULER_HEARTBEAT_SEC=10
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./config:/opt/airflow/config
+    restart: unless-stopped
+
+  airflow-worker:
+    image: apache/airflow:2.7.1
+    container_name: airflow-worker
+    command: celery worker
+    depends_on:
+      - airflow-scheduler
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://airflow:airflow@postgres/airflow
+      - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/0
+      - AIRFLOW__CORE__FERNET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./config:/opt/airflow/config
+    restart: unless-stopped
+
+  airflow-exporter:
+    image: bitnami/airflow-exporter:latest
+    container_name: airflow-exporter
+    ports:
+      - "9112:9112"
+    environment:
+      - AIRFLOW_DATABASE_HOST=postgres
+      - AIRFLOW_DATABASE_PORT=5432
+      - AIRFLOW_DATABASE_USER=airflow
+      - AIRFLOW_DATABASE_PASSWORD=airflow
+      - AIRFLOW_DATABASE_NAME=airflow
+      - AIRFLOW_DATABASE_BACKEND=postgres
+      - AIRFLOW_WEBSERVER_HOST=airflow-webserver
+      - AIRFLOW_WEBSERVER_PORT=8080
+      - AIRFLOW_WEBSERVER_AUTH_BACKEND=airflow.api.auth.backend.basic_auth
+      - AIRFLOW_WEBSERVER_USER=admin
+      - AIRFLOW_WEBSERVER_PASSWORD=admin
+      - AIRFLOW_EXPORTER_HOST=0.0.0.0
+      - AIRFLOW_EXPORTER_PORT=9112
+    depends_on:
+      - postgres
+      - airflow-webserver
+    restart: unless-stopped
+  
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: clickhouse-server
+    user: "0:0" # Run as root to avoid permission issues
+    ports:
+      - "8123:8123"   # HTTP interface
+      - "9000:9000"   # Native interface
+      - "9009:9009"   # Interserver communication
+    volumes:
+      - ./clickhouse-data:/var/lib/clickhouse
+      - ./clickhouse-logs:/var/log/clickhouse-server
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    environment:
+      - CLICKHOUSE_USER=admin
+      - CLICKHOUSE_PASSWORD=admin
+      - CLICKHOUSE_DB=default
+
+  clickhouse-client:
+    image: clickhouse/clickhouse-client:latest
+    container_name: clickhouse-client
+    entrypoint: ["/bin/sleep", "infinity"]
+    depends_on:
+      - clickhouse 
+
+volumes:
+  postgres-data:
+  prometheus-data:
+  grafana-data:
