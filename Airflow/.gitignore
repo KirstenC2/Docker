@@ -1,9 +1,0 @@
-plugins/
-logs/
-dags/
-config/
-.env
-
-clickhouse-data/
-clickhouse-logs/
-
