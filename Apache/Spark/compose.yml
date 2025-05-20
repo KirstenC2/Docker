@@ -2,27 +2,42 @@ version: '3'
 services:
   spark-master:
     image: bitnami/spark:latest
+    container_name: spark-master
     environment:
       - SPARK_MODE=master
       - SPARK_RPC_AUTHENTICATION_ENABLED=no
     ports:
-      - "7077:7077"   # Spark master port
-      - "8080:8080"   # Web UI
+      - "7077:7077"     # Spark Master RPC (only expose if submitting from outside Docker)
+      - "18080:8080"    # Spark Master Web UI
+    networks:
+      - spark-network
 
   spark-worker-1:
     image: bitnami/spark:latest
+    container_name: spark-worker-1
     environment:
       - SPARK_MODE=worker
       - SPARK_MASTER_URL=spark://spark-master:7077
     depends_on:
       - spark-master
     ports:
-      - "8081:8081"   # Web UI
+      - "18081:8081"    # Worker 1 UI
+    networks:
+      - spark-network
 
   spark-worker-2:
     image: bitnami/spark:latest
+    container_name: spark-worker-2
     environment:
       - SPARK_MODE=worker
       - SPARK_MASTER_URL=spark://spark-master:7077
     depends_on:
       - spark-master
+    ports:
+      - "18082:8081"    # Worker 2 UI (same internal port 8081, different host port)
+    networks:
+      - spark-network
+
+networks:
+  spark-network:
+    driver: bridge
