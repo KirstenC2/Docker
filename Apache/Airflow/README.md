@@ -32,7 +32,7 @@ This repository contains a Docker Compose setup for running Apache Airflow with 
 
 ## Port Mappings
 
-- Airflow Webserver: `8080`
+- Airflow Webserver: `8081`
 - PostgreSQL: `5432`
 - Redis: `6379`
 - ClickHouse HTTP: `8123`
@@ -59,7 +59,7 @@ This repository contains a Docker Compose setup for running Apache Airflow with 
    ```
 
 4. Access the Airflow web interface:
-   - URL: `http://localhost:8080`
+   - URL: `http://localhost:8081`
    - Username: `admin`
    - Password: `admin`
 
@@ -73,7 +73,7 @@ This repository contains a Docker Compose setup for running Apache Airflow with 
 - Username: `airflow`
 - Password: `airflow`
 - Database: `airflow`
-- Port: `5432`
+- Port: `5431`
 
 ### ClickHouse
 - Username: `admin`
