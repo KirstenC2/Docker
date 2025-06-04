@@ -48,9 +48,9 @@ Topic: orders
     Offsets              Offsets              Offsets
 ```
 
-### 4. Brokers
+### 4. Brokers (kafka的核心)
 
-Brokers are the servers that form a Kafka cluster:
+Brokers are the **servers** that form a Kafka cluster:
 
 - Each broker is identified by a unique ID
 - Brokers store partitions of topics
@@ -58,7 +58,7 @@ Brokers are the servers that form a Kafka cluster:
 - Brokers coordinate with each other using the controller (previously Zookeeper, now KRaft)
 - Clients connect to any broker, which acts as a bootstrap to the entire cluster
 
-### 5. Producers
+### 5. Producers (訊息發送者)
 
 Producers are applications that publish events to Kafka topics:
 
@@ -68,7 +68,7 @@ Producers are applications that publish events to Kafka topics:
   - `acks=1`: Leader acknowledgment only
   - `acks=all`: Full acknowledgment from all in-sync replicas
 
-### 6. Consumers
+### 6. Consumers (訊息接收者)
 
 Consumers are applications that subscribe to topics and process the events:
 
@@ -77,7 +77,7 @@ Consumers are applications that subscribe to topics and process the events:
 - Consumers operate in consumer groups for parallel processing
 - Each partition is consumed by exactly one consumer in a consumer group
 
-### 7. Consumer Groups
+### 7. Consumer Groups (消費者群組)
 
 Consumer groups allow for parallel processing of events:
 
@@ -99,7 +99,7 @@ Consumer Group: order-processing
         Topic: orders
 ```
 
-### 8. Replication
+### 8. Replication (複製數)
 
 Kafka provides fault tolerance through replication:
 
@@ -124,7 +124,7 @@ In our Docker Compose setup:
 - The controller quorum manages metadata and leader elections
 - The cluster uses a unique cluster ID for identification
 
-### 10. Retention and Compaction
+### 10. Retention and Compaction 
 
 Kafka provides two ways to manage data lifecycle:
 
@@ -133,7 +133,7 @@ Kafka provides two ways to manage data lifecycle:
 
 ## Advanced Concepts
 
-### 1. Exactly-Once Semantics
+### 1. Exactly-Once Semantics (確保訊息只被處理一次)
 
 Kafka provides different delivery guarantees:
 
@@ -141,7 +141,7 @@ Kafka provides different delivery guarantees:
 - **At-least-once**: Messages are never lost but may be redelivered
 - **Exactly-once**: Messages are delivered once and only once (using transactions)
 
-### 2. Stream Processing
+### 2. Stream Processing 
 
 Kafka Streams is a client library for building applications that process and analyze data in Kafka:
 
@@ -156,6 +156,22 @@ Kafka Connect is a framework for connecting Kafka with external systems:
 - Source connectors import data from external systems into Kafka
 - Sink connectors export data from Kafka to external systems
 - Connectors handle scalability, fault tolerance, and offset management
+
+Connect API 主要是成為kafka與外部系統的連結橋樑。
+
+```json
+{
+        "name": "mongodb-sink",
+        "config": {
+            "connector.class": "com.mongodb.kafka.connect.MongoSinkConnector",
+            "tasks.max": "1",
+            "topics": "my-topic",
+            "connection.uri": "mongodb://localhost:27017",
+            "database": "mydatabase",
+            "collection": "mycollection"
+        }
+}
+```
 
 ### 4. Schema Registry
 
