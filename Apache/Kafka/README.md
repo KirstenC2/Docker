@@ -18,6 +18,8 @@ An event (or message) is the basic unit of data in Kafka. It represents a fact o
 
 Events are immutable - once published to Kafka, they cannot be changed.
 
+
+
 ### 2. Topics
 
 Topics are the primary organizational unit in Kafka. They are similar to folders in a file system or tables in a database:
@@ -47,6 +49,14 @@ Topic: orders
 └───┴───┴───┴───┴───┘  └───┴───┴───┴───┴───┘  └───┴───┴───┴───┴───┘
     Offsets              Offsets              Offsets
 ```
+
+#### Offsets (Sequential ID)
+- A unique identifier assigned to each record(msg) in a partition.
+- 讓kafka可以追踪訊息的順序
+        - 尤其是需要追蹤consumer已處理的訊息位置
+- 每一個partition裡的訊息都有一個offset，從0開始遞增+1
+
+
 
 ### 4. Brokers (kafka的核心)
 
@@ -119,10 +129,30 @@ KRaft is Kafka's new consensus protocol that replaces Zookeeper:
 - Improves scalability by supporting more partitions per cluster
 - Provides better security with a unified security model
 
+Kraft mode的每一個kafka server都是可以被configure成controller或者broker的，又或者同時兼任。
+- process.roles: controller, broker / broker, controller
+
+一般來說，同時兼任的話就會被稱為 ‘combined servers’，但是combined mode真的是不被推薦的。因為同時兼任會增加未來scaling的困難度。
+
+#### Controller
+
+Kraft mode的controller node是負責管理metadata和leader elections的。
+所以基本上，controller mode is either active or hot standby.
+一般來說，會配置3-5個controller node，這樣可以確保在一個controller node故障時，其他controller node可以接管。
+
+### Broker
+
+Kraft mode的broker node = server in the Kafka storage layer
+負責store 從單個或多個event streams傳進來的訊息
+
+*！！！ 只要連結上一個kafka broker node，就可以連結上所有brokers in the cluster。*
+
 In our Docker Compose setup:
 - We have a dedicated controller node and broker nodes with controller capabilities
 - The controller quorum manages metadata and leader elections
 - The cluster uses a unique cluster ID for identification
+
+
 
 ### 10. Retention and Compaction 
 
@@ -225,3 +255,8 @@ kafka-topics.sh --bootstrap-server localhost:9092 --describe --topic my-topic
 - [Apache Kafka Documentation](https://kafka.apache.org/documentation/)
 - [Confluent Kafka Documentation](https://docs.confluent.io/platform/current/kafka/introduction.html)
 - [KRaft Mode Documentation](https://kafka.apache.org/documentation/#kraft)
+
+
+# Apache Kafka UI
+
+![Apache Kafka UI](images/KafkaUI.png)
